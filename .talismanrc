@@ -1,0 +1,26 @@
+fileignoreconfig:
+- filename: lipstick_shade_chart.jpg
+  checksum: 2b5a676d90aac6924e781df3bb2c40be64f7ef9a2f1f2fd15da8803b8e988a0d
+  ignore_detectors: []
+- filename: lipstick_products.jpg
+  checksum: 41b74e81749b0fe0308e5a9818610ce814be57d85abd563a8b994bf6465e3167
+  ignore_detectors: []
+- filename: images/LipstickShades.jpg
+  checksum: b85b7838068cf61d407c1be218efcad229521eb1bf04276d66228e525c23c615
+  ignore_detectors: []
+- filename: images/PBFace.jpg
+  checksum: dde48e28513f868ff0918b673e1bde7b0e2d79fea5993a0b5d394f9551dc0991
+  ignore_detectors: []
+- filename: images/Output_screenshot_13.11.2018.png
+  checksum: d9d594fe70e1fa926424c8be8400e6c7ad37658e628a83c89b7f71b57044c6b0
+  ignore_detectors: []
+- filename: images/landmark_plot.png
+  checksum: a1b90796435bcc1f4095cb1566e19939cb146af8135d1182ca76a211dc0cdcbc
+  ignore_detectors: []
+- filename: images/lipstick_shades.png
+  checksum: 84d1544882434ba5870743cb86253b301fe03cdf0265b64c21bc9b31b38ffddc
+  ignore_detectors: []
+- filename: images/Output_landmark_points.png
+  checksum: a026c1c989d79cc6ba430db39ef199284126dfcc54746a1c7282457ae5d0215f
+  ignore_detectors: []
+scopeconfig: []
