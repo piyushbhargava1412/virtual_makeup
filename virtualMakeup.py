@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # import the necessary packages
 from collections import OrderedDict
@@ -8,7 +8,7 @@ import cv2
 from scipy.interpolate import interp1d
 
 face_detector = dlib.get_frontal_face_detector()
-face_pose_predictor = dlib.shape_predictor('../models/dlib/shape_predictor_68_face_landmarks.dat')
+face_pose_predictor = dlib.shape_predictor('./models/shape_predictor_68_face_landmarks.dat')
 lipstick_color = None
 shadow_color = None
 setliner = False
@@ -61,6 +61,7 @@ def on_mouse_click(event, x, y, flags, frame):
         shadow_color = None
         setliner = False
 
+
 def resetApp():
     global lipstick_color
     global shadow_color
@@ -68,6 +69,7 @@ def resetApp():
     lipstick_color = None
     shadow_color = None
     setliner = False
+
 
 def shape_to_np(shape, dtype="int"):
     # initialize the list of (x, y)-coordinates
@@ -165,7 +167,7 @@ def visualize_facial_landmarks(image, shape, output, drawtype="fill", colors=Non
     cv2.addWeighted(overlay, alpha, output, 1 - alpha, 0, output)
 
     # # return the output image
-    # return output
+    return output
 
 
 def detectLip(lmPts):
@@ -189,7 +191,7 @@ def detectLip(lmPts):
     x2, y2 = lmPts[59][0], lmPts[59][1]
     cv2.line(lineMask, (x1 - x, y1 - y), (x2 - x, y2 - y), (255, 0, 0), 1)
 
-    _, contours, _ = cv2.findContours(lineMask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, _ = cv2.findContours(lineMask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     lineMask = cv2.drawContours(lineMask, contours, -1, (255), -1)
 
     # Innner Mask
@@ -201,7 +203,7 @@ def detectLip(lmPts):
     x1, y1 = lmPts[ilPts[0]][0], lmPts[ilPts[0]][1]
     x2, y2 = lmPts[67][0], lmPts[67][1]
     cv2.line(innerMask, (x1 - x, y1 - y), (x2 - x, y2 - y), (255, 0, 0), 1)
-    _, contours, _ = cv2.findContours(innerMask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours, _ = cv2.findContours(innerMask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     innerMask = cv2.drawContours(innerMask, contours, -1, (255), -1)
 
     # Subtract from outer mask
@@ -403,14 +405,14 @@ def _fillColor(frame, mask, color):
                 alpha = (mask[i, j] * 1.0) / 255
                 frame[i, j] = alpha * temp + (1 - alpha) * frame[i, j]
 
-    # tempImg = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
+    tempImg = cv2.cvtColor(hsvImg, cv2.COLOR_HSV2BGR)
 
-    # #fill color with mask
-    # for row in range(rows):
-    #     for col in range(cols):
-    #         if mask[row, col]:
-    #             alpha = (mask[row, col] * 1.0) / 255
-    #             frame[row, col] = alpha * tempImg[row][col] + (1 - alpha) * frame[row, col]
+    #fill color with mask
+    for row in range(rows):
+        for col in range(cols):
+            if mask[row, col]:
+                alpha = (mask[row, col] * 1.0) / 255
+                frame[row, col] = alpha * tempImg[row][col] + (1 - alpha) * frame[row, col]
 
 
 def _eyeShadowMask(frame, points, feature_pts, thickness=1, shift=(0, 0)):
@@ -446,7 +448,8 @@ def _eyeShadowMask(frame, points, feature_pts, thickness=1, shift=(0, 0)):
 
 def process_webcam():
     cv2.namedWindow("Output")
-    cap = cv2.VideoCapture(0)
+    # check on your machine for the correct device ID, could be 0 or 1 or something else
+    cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
@@ -454,8 +457,6 @@ def process_webcam():
     print(shade_chart.shape[0], shade_chart.shape[1])
     final_img = np.zeros((760, 640, 3), np.uint8)
     final_img[480:shade_chart.shape[0]+480, :shade_chart.shape[1]] = shade_chart
-#     cv2.imshow("Output", final_img)
-#     cv2.waitKey(0)
 
     cv2.setMouseCallback('Output', on_mouse_click, final_img)
     # cv2.waitKey(10)
@@ -463,31 +464,11 @@ def process_webcam():
     while True:
         # Capture frame-by-frame
         ret, image = cap.read()
-        rects = detect_face_dlib(image)
+        if not ret:
+            print("Unable to capture image from webcam")
+            break
 
-        output = image.copy()
-        # visual = image.copy()
-        for rect in rects:
-            landmark_pts = get_face_landmarks(image, rect)
-
-            # Get the lip mask
-            mask, bbox = detectLip(landmark_pts)
-            if lipstick_color is not None:
-                # Apply the lipstick
-                output = applyLipstick(output, mask, bbox, lipstick_color)
-
-            if setliner is True:
-                output = setEyeliner(output, landmark_pts, [0, 0, 0])
-
-            if shadow_color is not None:
-                output = setEyeShadow(output, landmark_pts, shadow_color)
-
-            # visualize all facial landmarks with a transparent overlay
-            # visualize_facial_landmarks(image, landmark_pts, visual)
-
-            # draw bounding boxes
-            # (x, y, w, h) = dlib_rect_to_bb(rect)
-            # cv2.rectangle(visual, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        output = process_frame(image)
 
         # get the resultant image
         final_img[:output.shape[0], :output.shape[1]] = output
@@ -502,6 +483,74 @@ def process_webcam():
 
     # When everything done, release the capture
     cap.release()
+
+
+def process_video(filename):
+    cv2.namedWindow("Output")
+    video = cv2.VideoCapture(filename)
+
+    # We need to set resolutions.
+    # so, convert them from float to integer.
+    frame_width = int(video.get(3))
+    frame_height = int(video.get(4))
+
+    size = (frame_width, frame_height)
+
+    # Below VideoWriter object will create
+    # a frame of above defined The output
+    # is stored in 'filename.avi' file.
+    result = cv2.VideoWriter('out.avi',
+                             cv2.VideoWriter_fourcc(*'MJPG'),
+                             10, size)
+
+    final_img = np.zeros((size[1], size[0], 3), np.uint8)
+
+    while True:
+        # Capture frame-by-frame
+        ret, image = video.read()
+        if not ret:
+            break
+
+        output = process_frame(image)
+
+        # get the resultant image
+        final_img[:output.shape[0], :output.shape[1]] = output
+
+        cv2.imshow("Output", final_img)
+        result.write(final_img)
+        key = cv2.waitKey(1)
+
+    # When everything done, release the capture
+    video.release()
+    result.release()
+
+
+def process_frame(image):
+    rects = detect_face_dlib(image)
+    output = image.copy()
+    for rect in rects:
+        landmark_pts = get_face_landmarks(image, rect)
+
+        # Get the lip mask
+        mask, bbox = detectLip(landmark_pts)
+        if lipstick_color is not None:
+            # Apply the lipstick
+            output = applyLipstick(output, mask, bbox, lipstick_color)
+
+        if setliner is True:
+            output = setEyeliner(output, landmark_pts, [0, 0, 0])
+
+        if shadow_color is not None:
+            output = setEyeShadow(output, landmark_pts, shadow_color)
+
+        # visualize_facial_landmarks(image, landmark_pts, output, "line")
+        # # plot_landmark_points(output, landmark_pts)
+        #
+        # # draw bounding boxes
+        # (x, y, w, h) = dlib_rect_to_bb(rect)
+        # cv2.rectangle(output, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
+    return output
 
 
 def plot_landmark_points(output, landmark_points):
@@ -544,5 +593,4 @@ def process_image(filename):
 
 if __name__ == "__main__":
     process_webcam()
-    # process_image('./PBFace.jpg')
     cv2.destroyAllWindows()
